@@ -39,11 +39,81 @@
 
   Testing the server - run `npm run test-todoServer` command in terminal
  */
-  const express = require('express');
-  const bodyParser = require('body-parser');
-  
-  const app = express();
-  
-  app.use(bodyParser.json());
-  
-  module.exports = app;
+const express = require("express");
+const bodyParser = require("body-parser");
+const { v4: uuidv4 } = require("uuid");
+
+let todos = [];
+
+const app = express();
+
+app.use(bodyParser.json());
+
+app.post("/todos", (req, res) => {
+  const { title, description } = req.body;
+  const newTodo = {
+    id: uuidv4(),
+    title,
+    description,
+    completed: false,
+  };
+  todos.push(newTodo);
+  return res.status(201).json({ id: newTodo.id });
+});
+
+app.get("/todos/:id", (req, res) => {
+  const id = req.params.id;
+  todos.forEach((obj) => {
+    if (obj.id === id) {
+      return res.status(200).json(obj);
+    }
+  });
+  return res.status(404).send("Todo not found");
+});
+
+app.get("/todos", (req, res) => {
+  // let jsonString = JSON.stringify(todos);
+  return res.status(200).json(todos);
+});
+
+app.put("/todos/:id", async (req, res) => {
+  const id = req.params.id;
+  for (let i = 0; i < todos.length; i++) {
+    const obj = todos[i];
+    if (obj.id === id) {
+      const newObj = req.body;
+
+      if (newObj.title !== undefined) {
+        obj.title = newObj.title;
+      }
+
+      if (newObj.description !== undefined) {
+        obj.description = newObj.description;
+      }
+
+      if (newObj.completed !== undefined) {
+        obj.completed = newObj.completed;
+      }
+      return res.status(200).json(obj);
+    }
+  }
+  return res.status(404).send("Todo not found");
+});
+
+app.delete("/todos/:id", (req, res) => {
+  const id = req.params.id;
+  for (let i = 0; i < todos.length; i++) {
+    const obj = todos[i];
+    if (obj.id === id) {
+      todos = todos.filter((todo) => todo.id !== id);
+      return res.status(200).json(obj);
+    }
+  }
+  return res.status(404).send("Todo not found");
+});
+
+app.all("*", (req, res) => {
+  res.status(404).send("Route not found");
+});
+
+module.exports = app;
